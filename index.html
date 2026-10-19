@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء اختبار</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); padding: 15px; margin: 0; }
+        .card { background: var(--tg-theme-secondary-bg-color, #f1f1f1); border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 10px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); font-size: 16px; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; background-color: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #ffffff); font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .option-row { display: flex; align-items: center; margin-bottom: 8px; background: var(--tg-theme-bg-color, #fff); padding: 5px; border-radius: 8px; border: 1px solid #eee;}
+        .option-row input[type="text"] { margin-bottom: 0; margin-right: 10px; border: none; background: transparent; }
+        .option-row input[type="radio"] { width: 20px; height: 20px; }
+        .add-opt-btn { background-color: #4CAF50; margin-top: 5px; }
+        h3 { margin-top: 0; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h3>عنوان الاختبار</h3>
+        <input type="text" id="quizTitle" placeholder="أدخل عنوان الاختبار هنا...">
+    </div>
+
+    <div class="card" id="questionCard">
+        <h3>السؤال 1</h3>
+        <input type="text" id="qText" placeholder="نص السؤال...">
+        
+        <div id="optionsContainer">
+            <!-- سيتم إضافة الخيارات هنا ديناميكياً -->
+        </div>
+        
+        <button class="add-opt-btn" onclick="addOption()">+ إضافة خيار</button>
+        <button onclick="saveQuestion()" style="background-color: #ff9800;">حفظ السؤال</button>
+    </div>
+
+    <button style="background-color: #28a745; margin-top: 20px;" onclick="submitQuiz()">🚀 نشر الاختبار</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // جعل التطبيق يملأ الشاشة
+
+        let questions = [];
+        let currentOptions = [];
+
+        // إضافة خيارين افتراضيين عند فتح الصفحة
+        window.onload = () => { addOption(); addOption(); };
+
+        function addOption() {
+            const container = document.getElementById('optionsContainer');
+            const index = currentOptions.length;
+            
+            const div = document.createElement('div');
+            div.className = 'option-row';
+            div.innerHTML = `
+                <input type="radio" name="correctOpt" id="opt_${index}" value="${index}">
+                <input type="text" id="optText_${index}" placeholder="الخيار ${index + 1}" oninput="updateOption(${index}, this.value)">
+            `;
+            container.appendChild(div);
+            currentOptions.push("");
+        }
+
+        function updateOption(index, value) {
+            currentOptions[index] = value;
+        }
+
+        function saveQuestion() {
+            const qText = document.getElementById('qText').value;
+            if (!qText) return alert("الرجاء إدخال نص السؤال");
+            
+            const opts = currentOptions.filter(o => o.trim() !== "");
+            if (opts.length < 2) return alert("الرجاء إضافة خيارين على الأقل");
+
+            const selectedRadio = document.querySelector('input[name="correctOpt"]:checked');
+            if (!selectedRadio) return alert("الرجاء تحديد الإجابة الصحيحة");
+            
+            const correctIndex = parseInt(selectedRadio.value);
+
+            questions.push({
+                question: qText,
+                options: opts,
+                correct_index: correctIndex
+            });
+
+            // تصفير الواجهة للسؤال التالي
+            document.getElementById('qText').value = "";
+            document.getElementById('optionsContainer').innerHTML = "";
+            currentOptions = [];
+            document.querySelector('#questionCard h3').innerText = `السؤال ${questions.length + 1}`;
+            addOption(); addOption(); // إضافة خيارين جدد
+            
+            alert("تم حفظ السؤال بنجاح!");
+        }
+
+        function submitQuiz() {
+            const title = document.getElementById('quizTitle').value;
+            if (!title) return alert("الرجاء إدخال عنوان الاختبار");
+            if (questions.length === 0) return alert("الرجاء إضافة سؤال واحد على الأقل");
+
+            const data = {
+                title: title,
+                questions: questions
+            };
+
+            // إرسال البيانات للبوت وإغلاق التطبيق
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>
