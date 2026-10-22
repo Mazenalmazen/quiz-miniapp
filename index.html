@@ -2,109 +2,309 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إنشاء اختبار</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إنشاء سؤال</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- مكتبة KaTeX لدعم المعادلات الرياضية في المعاينة -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); padding: 15px; margin: 0; }
-        .card { background: var(--tg-theme-secondary-bg-color, #f1f1f1); border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 10px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); font-size: 16px; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; background-color: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #ffffff); font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .option-row { display: flex; align-items: center; margin-bottom: 8px; background: var(--tg-theme-bg-color, #fff); padding: 5px; border-radius: 8px; border: 1px solid #eee;}
-        .option-row input[type="text"] { margin-bottom: 0; margin-right: 10px; border: none; background: transparent; }
-        .option-row input[type="radio"] { width: 20px; height: 20px; }
-        .add-opt-btn { background-color: #4CAF50; margin-top: 5px; }
-        h3 { margin-top: 0; font-size: 18px; }
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+            --card-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+            --primary-color: #1ca185; /* لون QuizBot الأخضر */
+            --border-color: #e0e0e0;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg-color); color: var(--text-color); 
+            padding: 15px; margin: 0; padding-bottom: 80px;
+        }
+        .card { 
+            background: var(--bg-color); border-radius: 12px; padding: 15px; 
+            margin-bottom: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border: 1px solid var(--border-color);
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .card-title { font-size: 16px; font-weight: bold; color: var(--primary-color); margin: 0; }
+        .create-btn { background: #b2dfd0; color: var(--primary-color); border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 14px;}
+        
+        input[type="text"] { 
+            width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid var(--border-color); 
+            font-size: 16px; background: transparent; color: var(--text-color); box-sizing: border-box; margin-bottom: 10px;
+        }
+        input[type="text"]:focus { outline: none; border-bottom-color: var(--primary-color); }
+        
+        .option-row { display: flex; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;}
+        .option-row input[type="text"] { margin-bottom: 0; border: none; flex: 1; }
+        .option-row input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary-color); margin-right: 10px; }
+        
+        .add-opt-btn { background: transparent; color: var(--primary-color); border: none; font-size: 16px; display: flex; align-items: center; justify-content: flex-start; padding: 10px 0; cursor: pointer; font-weight: bold;}
+        .add-opt-btn span { display: flex; justify-content: center; align-items: center; background: var(--primary-color); color: white; border-radius: 50%; width: 24px; height: 24px; margin-left: 8px; font-size: 18px;}
+        
+        .settings-title { font-size: 16px; font-weight: bold; color: var(--primary-color); margin-top: 0; margin-bottom: 15px;}
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .toggle-text { display: flex; flex-direction: column; }
+        .toggle-title { font-size: 14px; }
+        .toggle-desc { font-size: 12px; color: var(--hint-color); }
+        
+        /* Switch Toggle CSS */
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .icon-circle { width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px;}
+
+        .submit-btn { 
+            position: fixed; bottom: 20px; left: 15px; right: 15px; 
+            background: var(--primary-color); color: white; border: none; 
+            padding: 15px; border-radius: 25px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 10px rgba(28, 161, 133, 0.3);
+        }
+
+        /* تنسيقات لوحة الرموز العلمية */
+        .symbols-toggle-btn {
+            background: #f0f0f0; border: 1px solid var(--border-color); padding: 8px 12px;
+            border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer;
+            width: 100%; text-align: center; color: var(--text-color);
+            margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 5px;
+        }
+        .symbols-toggle-btn:active { background: #e0e0e0; }
+        .symbols-panel {
+            display: none; /* مخفية افتراضياً */
+            flex-wrap: wrap; gap: 8px; background: #fafafa; padding: 10px;
+            border-radius: 8px; border: 1px solid var(--border-color);
+            margin-bottom: 10px; max-height: 150px; overflow-y: auto; direction: ltr;
+        }
+        .symbol-item {
+            background: white; border: 1px solid #ddd; padding: 6px 10px;
+            border-radius: 5px; font-size: 18px; cursor: pointer; user-select: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .symbol-item:active { background: var(--primary-color); color: white; }
+
+        .preview-box {
+            display: none; /* مخفي افتراضياً */
+            background: #fff; border: 1px dashed var(--primary-color);
+            padding: 10px; border-radius: 8px; margin-bottom: 10px;
+            font-size: 16px; min-height: 40px; color: #000; direction: rtl; text-align: right;
+            unicode-bidi: plaintext;
+        }
     </style>
 </head>
 <body>
-
     <div class="card">
-        <h3>عنوان الاختبار</h3>
-        <input type="text" id="quizTitle" placeholder="أدخل عنوان الاختبار هنا...">
-    </div>
-
-    <div class="card" id="questionCard">
-        <h3>السؤال 1</h3>
-        <input type="text" id="qText" placeholder="نص السؤال...">
-        
-        <div id="optionsContainer">
-            <!-- سيتم إضافة الخيارات هنا ديناميكياً -->
+        <div class="card-header">
+            <h3 class="card-title">سؤال</h3>
+            <button class="create-btn">إنشاء</button>
         </div>
         
-        <button class="add-opt-btn" onclick="addOption()">+ إضافة خيار</button>
-        <button onclick="saveQuestion()" style="background-color: #ff9800;">حفظ السؤال</button>
+        <!-- زر تفعيل الرموز العلمية -->
+        <button type="button" class="symbols-toggle-btn" onclick="toggleSymbols()">
+            🔣 إظهار/إخفاء لوحة الرموز العلمية
+        </button>
+
+        <!-- لوحة الرموز العلمية (مخفية افتراضياً) -->
+        <div id="symbolsPanel" class="symbols-panel"></div>
+        
+        <!-- شاشة المعاينة (تظهر فقط مع لوحة الرموز) -->
+        <div id="previewPanel" class="preview-box">المعاينة ستظهر هنا...</div>
+
+        <input type="text" id="qText" placeholder="اطرح سؤالاً" oninput="updatePreview()">
+        <input type="text" id="qDesc" placeholder="إضافة وصف (اختياري)">
     </div>
 
-    <button style="background-color: #28a745; margin-top: 20px;" onclick="submitQuiz()">🚀 نشر الاختبار</button>
+    <div class="card">
+        <h3 class="card-title" style="margin-bottom:15px;">إجابات الاختبار</h3>
+        <div id="optionsContainer"></div>
+        <button class="add-opt-btn" onclick="addOption()"><span>+</span> إضافة خيار...</button>
+        <p style="font-size:11px; color:var(--hint-color); text-align:center; margin-top:15px;">يمكنك إضافة ١١ خيارًا إضافيًا.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="settings-title">الإعدادات</h3>
+        
+        <div class="toggle-row">
+            <div class="toggle-text">
+                <span class="toggle-title">عرض من صوت</span>
+                <span class="toggle-desc">اعرض اسم المصوت على كل خيار</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label class="switch"><input type="checkbox" id="showVoice"><span class="slider"></span></label>
+                <div class="icon-circle" style="background:#2fa2e0;">👁</div>
+            </div>
+        </div>
+
+        <div class="toggle-row">
+            <div class="toggle-text">
+                <span class="toggle-title">السماح بإجابات متعددة</span>
+                <span class="toggle-desc">سيستطيع المصوتون اختيار أكثر من خيار</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label class="switch"><input type="checkbox" id="allowMultiple"><span class="slider"></span></label>
+                <div class="icon-circle" style="background:#ff9800;">☑</div>
+            </div>
+        </div>
+
+        <div class="toggle-row">
+            <div class="toggle-text">
+                <span class="toggle-title">السماح بإضافة الخيارات</span>
+                <span class="toggle-desc">يمكن المشاركين اقتراح خيارات جديدة</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label class="switch"><input type="checkbox" id="allowAddOptions" disabled><span class="slider"></span></label>
+                <div class="icon-circle" style="background:#90a4ae;">+</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitQuiz()">نشر</button>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // جعل التطبيق يملأ الشاشة
+        tg.expand();
+        
+        let currentOptions = ["", ""];
+        let activeInput = document.getElementById('qText'); // الحقل النشط حالياً
 
-        let questions = [];
-        let currentOptions = [];
+        // الرموز العلمية التي طلبتها
+        const scientificSymbols = [
+            'π','<','≤','≥','>','∪','∩','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹','⁰','⁻','⁼','⁺','ᵅ','ⁿ','ⁱ','ˣ','∀','∃','∅','∫','∑','lim','ₓ','→','ₐ','f','π','ⁿ','x','∞','-','+','₁','₂','₃','₄','₅','₆','₇','₈','₉','₀','→','ₓ','ₐ','₋','₊','₌','π','∆','𐦫','ᶿ','ᶲ','∀','⁺','ﮪ','∀','ᶲ','ᶿ','∫','⇐','𐬼','؏','⁻','±','ھ','∆','≥','≤','←','𝈝','⊃','ꚙ','⊂','⋂','∅','⬸','⟻','𖼀','❌','✔','ｌ','⇔','∴'
+        ];
 
-        // إضافة خيارين افتراضيين عند فتح الصفحة
-        window.onload = () => { addOption(); addOption(); };
-
-        function addOption() {
-            const container = document.getElementById('optionsContainer');
-            const index = currentOptions.length;
+        window.onload = () => { 
+            renderOptions(); 
+            renderSymbols();
             
-            const div = document.createElement('div');
-            div.className = 'option-row';
-            div.innerHTML = `
-                <input type="radio" name="correctOpt" id="opt_${index}" value="${index}">
-                <input type="text" id="optText_${index}" placeholder="الخيار ${index + 1}" oninput="updateOption(${index}, this.value)">
-            `;
-            container.appendChild(div);
-            currentOptions.push("");
+            // تتبع الحقل الذي يكتب فيه المستخدم لإدخال الرمز فيه
+            document.body.addEventListener('focusin', (e) => {
+                if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
+                    activeInput = e.target;
+                }
+            });
+        };
+
+        // 1. بناء لوحة الرموز
+        function renderSymbols() {
+            const panel = document.getElementById('symbolsPanel');
+            panel.innerHTML = '';
+            scientificSymbols.forEach(sym => {
+                const span = document.createElement('span');
+                span.className = 'symbol-item';
+                span.innerText = sym;
+                span.onclick = () => insertSymbol(sym);
+                panel.appendChild(span);
+            });
+        }
+
+        // 2. إظهار وإخفاء اللوحة والمعاينة
+        function toggleSymbols() {
+            const panel = document.getElementById('symbolsPanel');
+            const preview = document.getElementById('previewPanel');
+            
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'flex';
+                preview.style.display = 'block';
+                updatePreview(); // تحديث المعاينة فور الفتح
+            } else {
+                panel.style.display = 'none';
+                preview.style.display = 'none';
+            }
+        }
+
+        // 3. إدخال الرمز في الحقل النشط
+        function insertSymbol(symbol) {
+            if (!activeInput) return;
+            
+            const start = activeInput.selectionStart;
+            const end = activeInput.selectionEnd;
+            
+            // إضافة الرمز في مكان المؤشر
+            activeInput.value = activeInput.value.substring(0, start) + symbol + activeInput.value.substring(end);
+            
+            // تحريك المؤشر بعد الرمز
+            activeInput.selectionStart = activeInput.selectionEnd = start + symbol.length;
+            activeInput.focus();
+            
+            // تحديث المعاينة إذا كنا نكتب في السؤال
+            if (activeInput.id === 'qText') {
+                updatePreview();
+            }
+        }
+
+        // 4. تحديث المعاينة (يدعم الرموز والمعادلات البسيطة)
+        function updatePreview() {
+            const previewBox = document.getElementById('previewPanel');
+            if (previewBox.style.display === 'none') return;
+
+            let text = document.getElementById('qText').value;
+            if (!text.trim()) {
+                previewBox.innerHTML = "المعاينة ستظهر هنا...";
+                return;
+            }
+
+            // دعم معادلات LaTeX إذا كتبها المعلم مثل $x^2$
+            let html = text.replace(/\$(.*?)\$/g, (match, eq) => {
+                try {
+                    // الكود يحاول استخدام KaTeX، إذا فشل يعرض النص كما هو
+                    if (typeof katex !== 'undefined') {
+                        return katex.renderToString(eq, { displayMode: false, throwOnError: false });
+                    }
+                    return match;
+                } catch(e) { return match; }
+            });
+            previewBox.innerHTML = html;
+        }
+
+        // 5. إدارة الخيارات
+        function renderOptions() {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = "";
+            currentOptions.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.className = 'option-row';
+                div.innerHTML = `
+                    <input type="radio" name="correctOpt" value="${index}" ${index === 0 ? 'checked' : ''}>
+                    <input type="text" id="opt_${index}" placeholder="خيار ${index + 1}" value="${opt}" oninput="updateOption(${index}, this.value)">
+                `;
+                container.appendChild(div);
+            });
         }
 
         function updateOption(index, value) {
             currentOptions[index] = value;
         }
 
-        function saveQuestion() {
-            const qText = document.getElementById('qText').value;
-            if (!qText) return alert("الرجاء إدخال نص السؤال");
-            
-            const opts = currentOptions.filter(o => o.trim() !== "");
-            if (opts.length < 2) return alert("الرجاء إضافة خيارين على الأقل");
-
-            const selectedRadio = document.querySelector('input[name="correctOpt"]:checked');
-            if (!selectedRadio) return alert("الرجاء تحديد الإجابة الصحيحة");
-            
-            const correctIndex = parseInt(selectedRadio.value);
-
-            questions.push({
-                question: qText,
-                options: opts,
-                correct_index: correctIndex
-            });
-
-            // تصفير الواجهة للسؤال التالي
-            document.getElementById('qText').value = "";
-            document.getElementById('optionsContainer').innerHTML = "";
-            currentOptions = [];
-            document.querySelector('#questionCard h3').innerText = `السؤال ${questions.length + 1}`;
-            addOption(); addOption(); // إضافة خيارين جدد
-            
-            alert("تم حفظ السؤال بنجاح!");
+        function addOption() {
+            if (currentOptions.length >= 10) return alert("الحد الأقصى 10 خيارات");
+            currentOptions.push("");
+            renderOptions();
         }
 
+        // 6. النشر
         function submitQuiz() {
-            const title = document.getElementById('quizTitle').value;
-            if (!title) return alert("الرجاء إدخال عنوان الاختبار");
-            if (questions.length === 0) return alert("الرجاء إضافة سؤال واحد على الأقل");
-
+            const qText = document.getElementById('qText').value.trim();
+            const qDesc = document.getElementById('qDesc').value.trim();
+            const selectedRadio = document.querySelector('input[name="correctOpt"]:checked');
+            
+            if (!qText) return alert("الرجاء إدخال نص السؤال");
+            
+            const validOptions = currentOptions.filter(o => o.trim() !== "");
+            if (validOptions.length < 2) return alert("الرجاء إدخال خيارين على الأقل");
+            
+            if (!selectedRadio) return alert("الرجاء تحديد الإجابة الصحيحة");
+            
             const data = {
-                title: title,
-                questions: questions
+                question: qText,
+                description: qDesc,
+                options: validOptions,
+                correct_index: parseInt(selectedRadio.value)
             };
 
-            // إرسال البيانات للبوت وإغلاق التطبيق
             tg.sendData(JSON.stringify(data));
             tg.close();
         }
